@@ -8,7 +8,8 @@
     "dev:local": "bun --watch --env-file=.env.local src/server.ts",
     "start": "bun src/server.ts",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.8",
