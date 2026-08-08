@@ -1,4 +1,4 @@
-import type { ProductFilters as ProductFiltersType } from "../../types/product";
+import type { ProductFilters as ProductFiltersType } from "../../types/product.ts";
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;

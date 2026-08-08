@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchProductsMock } from "../lib/mock/products.api";
+import { fetchProductsMock } from "../lib/mock/product.api.ts";
 import type {
   Product,
   ProductFilters as ProductFiltersType,
@@ -80,7 +80,7 @@ export default function Products() {
 
         <div className="grid lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
-            {facets.brands.length > 0 && (
+            {(facets?.brands?.length ?? 0) > 0 && (
               <ProductFiltersPanel
                 filters={filters}
                 onChange={setFilters}

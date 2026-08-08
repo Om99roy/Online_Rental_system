@@ -11,6 +11,8 @@ export interface Product {
   sku: string;
   category: string;
   brand: string;
+  color: string;
+  availableDurations: number[];
   imageUrl: string;
   status: ProductStatus;
   stock: number;
@@ -18,7 +20,15 @@ export interface Product {
   securityDeposit: number;
 }
 
-export interface FetchProductsParams {
+export interface ProductFilters {
+  brands?: string[];
+  colors?: string[];
+  duration?: number;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export interface FetchProductsParams extends ProductFilters {
   page?: number;
   limit?: number;
   search?: string;
@@ -32,5 +42,11 @@ export interface FetchProductsResponse {
     limit: number;
     total: number;
     totalPages: number;
+  };
+  facets: {
+    brands: string[];
+    colors: string[];
+    priceRange: { min: number; max: number };
+    durations: number[];
   };
 }

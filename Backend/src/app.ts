@@ -5,11 +5,14 @@ import compression from "compression";
 import "dotenv/config";
 import authRoutes from "./modules/auth/auth.routes";
 import { adminRouter } from "./admin/admin.router";
+import productsRouter from "./modules/products/products.routes";
+import addressRouter from "./modules/addresses/address.routes";
 import morgan from "morgan";
 import express from "express";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { globalLimiter } from "./middlewares/rateLimiters/globalLimiter";
 import path from "path";
+import paymentRouter from "./modules/payments/payment.routes";
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -38,7 +41,9 @@ app.get('/api/health', (_, res) => {
 });
 app.use("/api/v1/auth", globalLimiter, authRoutes);
 app.use("/api/v1/admin", globalLimiter, adminRouter);
-
+app.use("/api/v1/products", globalLimiter, productsRouter);
+app.use("/api/v1/addresses", globalLimiter, addressRouter);
+app.use("/api/v1/payments", globalLimiter, paymentRouter);
 app.use("/{*any}", (_, res) => {
   res.status(404).json({ message: "Route not found" });
 });
