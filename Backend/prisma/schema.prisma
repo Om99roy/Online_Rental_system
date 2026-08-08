@@ -8,6 +8,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+// =========================
+// ENUMS
+// =========================
+
 enum Role {
   CUSTOMER
   ADMIN
@@ -20,15 +25,54 @@ enum AccountStatus {
   DELETED
 }
 
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+}
+
+enum RentalStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  OVERDUE
+  RETURNED
+  COMPLETED
+  CANCELLED
+}
+
+enum PickupMethod {
+  DELIVERY
+  STORE_PICKUP
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum ReturnCondition {
+  GOOD
+  DAMAGED
+  MISSING_ACCESSORIES
+}
+
+
+// =========================
+// USER
+// =========================
+
 model User {
-  id        String @id @default(cuid())
+  id       String @id @default(cuid())
 
-  username  String @unique
-  email     String @unique
-  password  String
+  username String @unique
+  email    String @unique
+  password String
 
-  role      Role @default(USER)
-  status    AccountStatus @default(ACTIVE)
+  role   Role          @default(CUSTOMER)
+  status AccountStatus @default(ACTIVE)
 
   emailVerified Boolean @default(false)
 
@@ -37,42 +81,192 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
   refreshTokens RefreshToken[]
   passwordResets PasswordResetToken[]
   emailTokens    EmailVerificationToken[]
+
+  rentals Rental[]
+
+  @@index([role])
+  @@index([status])
 }
 
 
+// =========================
+// PRODUCT
+// =========================
+
+model Product {
+  id String @id @default(cuid())
+
+  name        String
+  description String? @db.Text
+
+  imageUrl String?
+
+  category String?
+
+  pricePerDay     Decimal @db.Decimal(10, 2)
+  securityDeposit Decimal @db.Decimal(10, 2)
+
+  stock         Int @default(1)
+  availableStock Int @default(1)
+
+  status ProductStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rentalItems RentalItem[]
+
+  @@index([status])
+  @@index([category])
+}
+
+
+// =========================
+// RENTAL
+// =========================
+
+model Rental {
+  id String @id @default(cuid())
+
+  rentalNumber String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime
+
+  pickupMethod PickupMethod @default(STORE_PICKUP)
+
+  status RentalStatus @default(PENDING)
+
+  paymentStatus PaymentStatus @default(PENDING)
+
+  // Money
+  subtotal      Decimal @db.Decimal(10, 2)
+  securityDeposit Decimal @db.Decimal(10, 2)
+
+  lateFee Decimal @default(0) @db.Decimal(10, 2)
+  refund  Decimal @default(0) @db.Decimal(10, 2)
+
+  // Return information
+  returnedAt DateTime?
+
+  returnCondition ReturnCondition?
+  returnNotes     String? @db.Text
+
+  // Payment / settlement
+  paidAt       DateTime?
+  depositSettledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items RentalItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+
+// =========================
+// RENTAL ITEM
+// =========================
+
+model RentalItem {
+  id String @id @default(cuid())
+
+  rentalId String
+  rental   Rental @relation(
+    fields: [rentalId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  productId String
+  product   Product @relation(
+    fields: [productId],
+    references: [id]
+  )
+
+  quantity Int @default(1)
+
+  // Store the price at the time of rental.
+  // This prevents old rentals from changing
+  // when the product's price changes.
+  pricePerDay Decimal @db.Decimal(10, 2)
+
+  subtotal Decimal @db.Decimal(10, 2)
+
+  @@index([rentalId])
+  @@index([productId])
+}
+
+
+// =========================
+// AUTH TOKENS
+// =========================
+
 model RefreshToken {
   id String @id @default(cuid())
+
   token String @unique @db.VarChar(512)
+
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
   expiresAt DateTime
   createdAt DateTime @default(now())
+
   @@index([userId])
 }
 
 
 model PasswordResetToken {
   id String @id @default(cuid())
+
   token String @unique @db.VarChar(512)
+
   userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
   expiresAt DateTime
   used Boolean @default(false)
+
   createdAt DateTime @default(now())
+
   @@index([userId])
 }
 
 
 model EmailVerificationToken {
   id String @id @default(cuid())
+
   token String @unique @db.VarChar(512)
+
   userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
   expiresAt DateTime
+
   createdAt DateTime @default(now())
+
   @@index([userId])
 }
