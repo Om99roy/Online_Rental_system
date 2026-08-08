@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
@@ -7,7 +7,6 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
 
 // ============================================================
 // ENUMS
@@ -146,17 +145,19 @@ enum NotificationType {
   SYSTEM
 }
 
-
 // ============================================================
 // ORGANIZATION
+// Represents the rental business itself. All admin-configured
+// data (products, pricelists, rental periods, quotations) is
+// scoped to an Organization.
 // ============================================================
 
 model Organization {
   id String @id @default(cuid())
 
-  name    String
-  email   String?
-  phone   String?
+  name  String
+  email String?
+  phone String?
 
   address String? @db.Text
 
@@ -167,55 +168,52 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users          User[]
-  products       Product[]
-  priceLists     PriceList[]
-  rentalPeriods  RentalPeriod[]
-  rentals        Rental[]
-  quotations     Quotation[]
+  users              User[]
+  products           Product[]
+  priceLists         PriceList[]
+  rentalPeriods      RentalPeriod[]
+  rentals            Rental[]
+  quotations         Quotation[]
   quotationTemplates QuotationTemplate[]
-  invoices       Invoice[]
-  settings       OrganizationSettings?
+  invoices           Invoice[]
+  settings           OrganizationSettings?
 }
-
 
 // ============================================================
 // ORGANIZATION SETTINGS
+// Admin-configurable defaults: deposit rules, late fee rules,
+// grace period, allowed pickup/payment methods.
 // ============================================================
 
 model OrganizationSettings {
   id String @id @default(cuid())
 
-  organizationId String @unique
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  defaultDepositType DepositType @default(FIXED)
-  defaultDepositValue Decimal @default(0) @db.Decimal(10, 2)
+  defaultDepositType  DepositType @default(FIXED)
+  defaultDepositValue Decimal     @default(0) @db.Decimal(10, 2)
 
-  lateFeeEnabled Boolean @default(true)
+  lateFeeEnabled Boolean     @default(true)
+  lateFeeType    LateFeeType @default(DAILY)
+  lateFeeValue   Decimal     @default(0) @db.Decimal(10, 2)
 
-  lateFeeType LateFeeType @default(DAILY)
-  lateFeeValue Decimal @default(0) @db.Decimal(10, 2)
-
-  gracePeriodMinutes Int @default(0)
-
-  maximumLateFee Decimal? @db.Decimal(10, 2)
+  gracePeriodMinutes Int      @default(0)
+  maximumLateFee     Decimal? @db.Decimal(10, 2)
 
   allowOnlinePayment Boolean @default(true)
-  allowStorePickup Boolean @default(true)
-  allowDelivery Boolean @default(true)
+  allowStorePickup   Boolean @default(true)
+  allowDelivery      Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-
 // ============================================================
 // USER
+// Both portal customers and organization admins live here,
+// distinguished by `role`. Admins belong to an Organization;
+// customers may or may not (organizationId nullable).
 // ============================================================
 
 model User {
@@ -227,8 +225,7 @@ model User {
 
   firstName String?
   lastName  String?
-
-  phone String?
+  phone     String?
 
   profileImageUrl String?
 
@@ -240,24 +237,20 @@ model User {
   lastLoginAt DateTime?
 
   organizationId String?
-  organization   Organization? @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: SetNull
-  )
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   addresses Address[]
 
-  rentals Rental[]
-
-  quotationsCreated Quotation[] @relation("QuotationCreatedBy")
+  rentals              Rental[]
+  quotationsAsCustomer Quotation[] @relation("QuotationCustomer")
+  quotationsCreated    Quotation[] @relation("QuotationCreatedBy")
 
   notifications Notification[]
 
-  refreshTokens RefreshToken[]
+  refreshTokens  RefreshToken[]
   passwordResets PasswordResetToken[]
   emailTokens    EmailVerificationToken[]
 
@@ -266,20 +259,16 @@ model User {
   @@index([status])
 }
 
-
 // ============================================================
 // USER ADDRESSES
+// Customer shipping/delivery addresses.
 // ============================================================
 
 model Address {
   id String @id @default(cuid())
 
   userId String
-  user   User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name String?
 
@@ -303,25 +292,24 @@ model Address {
   @@index([userId])
 }
 
-
 // ============================================================
 // PRODUCTS
+// The rentable catalog item. barcode/qrCode support the
+// pickup & return scanning workflow.
 // ============================================================
 
 model Product {
   id String @id @default(cuid())
 
   organizationId String
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   name        String
   description String? @db.Text
 
-  sku String
+  sku     String
+  barcode String?
+  qrCode  String?
 
   category String?
 
@@ -341,34 +329,28 @@ model Product {
 
   variants ProductVariant[]
 
-  rentalItems RentalItem[]
-
+  rentalItems    RentalItem[]
   priceListItems PriceListItem[]
-
   quotationItems QuotationItem[]
-
-  damages DamageReport[]
+  damages        DamageReport[]
 
   @@unique([organizationId, sku])
   @@index([organizationId])
   @@index([status])
   @@index([category])
+  @@index([barcode])
 }
-
 
 // ============================================================
 // PRODUCT VARIANTS
+// e.g. Brand / Manufacturer / Color / Size combinations.
 // ============================================================
 
 model ProductVariant {
   id String @id @default(cuid())
 
   productId String
-  product   Product @relation(
-    fields: [productId],
-    references: [id],
-    onDelete: Cascade
-  )
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   name String
 
@@ -387,26 +369,22 @@ model ProductVariant {
   @@index([productId])
 }
 
-
 // ============================================================
 // RENTAL PERIOD
+// Admin-defined durations (e.g. "3 Days", "1 Week") that
+// price lists can be tied to.
 // ============================================================
 
 model RentalPeriod {
   id String @id @default(cuid())
 
   organizationId String
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   name String
 
   duration Int
-
-  unit LateFeeType
+  unit     LateFeeType
 
   description String?
 
@@ -415,26 +393,24 @@ model RentalPeriod {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  priceListItems PriceListItem[]
+
   @@index([organizationId])
 }
 
-
 // ============================================================
 // PRICE LIST
+// One default price list applies org-wide; additional
+// price lists can be scoped to a validity window.
 // ============================================================
 
 model PriceList {
   id String @id @default(cuid())
 
   organizationId String
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  name String
-
+  name        String
   description String?
 
   isDefault Boolean @default(false)
@@ -451,34 +427,22 @@ model PriceList {
   @@index([organizationId])
 }
 
-
 // ============================================================
 // PRICE LIST ITEMS
+// Per-product (optionally per-rental-period) price entries.
 // ============================================================
 
 model PriceListItem {
   id String @id @default(cuid())
 
   priceListId String
-  priceList   PriceList @relation(
-    fields: [priceListId],
-    references: [id],
-    onDelete: Cascade
-  )
+  priceList   PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
 
   productId String
-  product   Product @relation(
-    fields: [productId],
-    references: [id],
-    onDelete: Cascade
-  )
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   rentalPeriodId String?
-  rentalPeriod   RentalPeriod? @relation(
-    fields: [rentalPeriodId],
-    references: [id],
-    onDelete: SetNull
-  )
+  rentalPeriod   RentalPeriod? @relation(fields: [rentalPeriodId], references: [id], onDelete: SetNull)
 
   price Decimal @db.Decimal(10, 2)
 
@@ -490,9 +454,10 @@ model PriceListItem {
   @@index([productId])
 }
 
-
 // ============================================================
 // RENTAL
+// The core order. Covers cart -> checkout -> pickup -> return
+// lifecycle for both online (portal) and offline (admin) flows.
 // ============================================================
 
 model Rental {
@@ -501,18 +466,10 @@ model Rental {
   rentalNumber String @unique
 
   organizationId String
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   customerId String
-  customer   User @relation(
-    fields: [customerId],
-    references: [id],
-    onDelete: Restrict
-  )
+  customer   User   @relation(fields: [customerId], references: [id], onDelete: Restrict)
 
   startDate DateTime
   endDate   DateTime
@@ -523,28 +480,18 @@ model Rental {
   pickupMethod PickupMethod @default(STORE_PICKUP)
 
   deliveryAddressId String?
-  deliveryAddress   Address? @relation(
-    "RentalDeliveryAddress",
-    fields: [deliveryAddressId],
-    references: [id],
-    onDelete: SetNull
-  )
+  deliveryAddress   Address? @relation("RentalDeliveryAddress", fields: [deliveryAddressId], references: [id], onDelete: SetNull)
 
   status RentalStatus @default(PENDING)
 
   subtotal Decimal @db.Decimal(10, 2)
-
   discount Decimal @default(0) @db.Decimal(10, 2)
+  tax      Decimal @default(0) @db.Decimal(10, 2)
 
-  tax Decimal @default(0) @db.Decimal(10, 2)
-
-  totalAmount Decimal @db.Decimal(10, 2)
-
+  totalAmount     Decimal @db.Decimal(10, 2)
   securityDeposit Decimal @default(0) @db.Decimal(10, 2)
-
-  lateFee Decimal @default(0) @db.Decimal(10, 2)
-
-  refundAmount Decimal @default(0) @db.Decimal(10, 2)
+  lateFee         Decimal @default(0) @db.Decimal(10, 2)
+  refundAmount    Decimal @default(0) @db.Decimal(10, 2)
 
   notes String? @db.Text
 
@@ -556,11 +503,8 @@ model Rental {
   payments Payment[]
 
   deposit SecurityDeposit?
-
-  pickup Pickup?
-
-  return Return?
-
+  pickup  Pickup?
+  return  Return?
   invoice Invoice?
 
   quotation Quotation?
@@ -572,7 +516,6 @@ model Rental {
   @@index([endDate])
 }
 
-
 // ============================================================
 // RENTAL ITEMS
 // ============================================================
@@ -581,31 +524,20 @@ model RentalItem {
   id String @id @default(cuid())
 
   rentalId String
-  rental   Rental @relation(
-    fields: [rentalId],
-    references: [id],
-    onDelete: Cascade
-  )
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
 
   productId String
-  product   Product @relation(
-    fields: [productId],
-    references: [id],
-    onDelete: Restrict
-  )
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
-  quantity Int @default(1)
-
+  quantity     Int     @default(1)
   pricePerUnit Decimal @db.Decimal(10, 2)
-
-  subtotal Decimal @db.Decimal(10, 2)
+  subtotal     Decimal @db.Decimal(10, 2)
 
   createdAt DateTime @default(now())
 
   @@index([rentalId])
   @@index([productId])
 }
-
 
 // ============================================================
 // PAYMENTS
@@ -615,16 +547,10 @@ model Payment {
   id String @id @default(cuid())
 
   rentalId String
-  rental   Rental @relation(
-    fields: [rentalId],
-    references: [id],
-    onDelete: Cascade
-  )
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
 
-  amount Decimal @db.Decimal(10, 2)
-
+  amount Decimal       @db.Decimal(10, 2)
   method PaymentMethod
-
   status PaymentStatus @default(PENDING)
 
   transactionId String?
@@ -638,32 +564,26 @@ model Payment {
   @@index([status])
 }
 
-
 // ============================================================
 // SECURITY DEPOSIT
+// Held at confirmation, settled at return (full refund on
+// time, penalty deduction if late).
 // ============================================================
 
 model SecurityDeposit {
   id String @id @default(cuid())
 
   rentalId String @unique
-  rental   Rental @relation(
-    fields: [rentalId],
-    references: [id],
-    onDelete: Cascade
-  )
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
 
-  amount Decimal @db.Decimal(10, 2)
-
+  amount         Decimal @db.Decimal(10, 2)
   deductedAmount Decimal @default(0) @db.Decimal(10, 2)
-
   refundedAmount Decimal @default(0) @db.Decimal(10, 2)
 
   status DepositStatus @default(PENDING)
 
   collectedAt DateTime?
-
-  settledAt DateTime?
+  settledAt   DateTime?
 
   notes String? @db.Text
 
@@ -671,25 +591,19 @@ model SecurityDeposit {
   updatedAt DateTime @updatedAt
 }
 
-
 // ============================================================
 // PICKUP
+// Drives the daily pickup schedule / confirmation workflow.
 // ============================================================
 
 model Pickup {
   id String @id @default(cuid())
 
   rentalId String @unique
-  rental   Rental @relation(
-    fields: [rentalId],
-    references: [id],
-    onDelete: Cascade
-  )
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
 
   scheduledAt DateTime?
-
-  status PickupStatus @default(SCHEDULED)
-
+  status      PickupStatus @default(SCHEDULED)
   confirmedAt DateTime?
 
   notes String? @db.Text
@@ -698,36 +612,29 @@ model Pickup {
   updatedAt DateTime @updatedAt
 }
 
-
 // ============================================================
 // RETURN
+// Drives the return schedule, condition inspection, and
+// late-fee / deposit settlement.
 // ============================================================
 
 model Return {
   id String @id @default(cuid())
 
   rentalId String @unique
-  rental   Rental @relation(
-    fields: [rentalId],
-    references: [id],
-    onDelete: Cascade
-  )
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
 
   scheduledAt DateTime?
+  returnedAt  DateTime?
 
-  returnedAt DateTime?
-
-  status ReturnStatus @default(PENDING)
-
+  status    ReturnStatus     @default(PENDING)
   condition ReturnCondition?
 
-  damageNotes String? @db.Text
-
+  damageNotes        String? @db.Text
   missingAccessories String? @db.Text
 
-  lateByMinutes Int @default(0)
-
-  lateFee Decimal @default(0) @db.Decimal(10, 2)
+  lateByMinutes Int     @default(0)
+  lateFee       Decimal @default(0) @db.Decimal(10, 2)
 
   notes String? @db.Text
 
@@ -737,35 +644,25 @@ model Return {
   damageReports DamageReport[]
 }
 
-
 // ============================================================
 // DAMAGE / INSPECTION
+// Feeds the repair workflow when a returned product needs it.
 // ============================================================
 
 model DamageReport {
   id String @id @default(cuid())
 
   returnId String
-  return   Return @relation(
-    fields: [returnId],
-    references: [id],
-    onDelete: Cascade
-  )
+  return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
   productId String
-  product   Product @relation(
-    fields: [productId],
-    references: [id],
-    onDelete: Restrict
-  )
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   type DamageType
 
   description String? @db.Text
-
-  repairCost Decimal @default(0) @db.Decimal(10, 2)
-
-  resolved Boolean @default(false)
+  repairCost  Decimal @default(0) @db.Decimal(10, 2)
+  resolved    Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -774,9 +671,10 @@ model DamageReport {
   @@index([productId])
 }
 
-
 // ============================================================
 // INVOICE
+// Auto-generated on confirmation / late-fee settlement so the
+// customer can download it from the portal.
 // ============================================================
 
 model Invoice {
@@ -785,32 +683,20 @@ model Invoice {
   invoiceNumber String @unique
 
   organizationId String
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   rentalId String @unique
-  rental   Rental @relation(
-    fields: [rentalId],
-    references: [id],
-    onDelete: Cascade
-  )
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
 
   subtotal Decimal @db.Decimal(10, 2)
-
-  tax Decimal @default(0) @db.Decimal(10, 2)
-
+  tax      Decimal @default(0) @db.Decimal(10, 2)
   discount Decimal @default(0) @db.Decimal(10, 2)
-
-  total Decimal @db.Decimal(10, 2)
+  total    Decimal @db.Decimal(10, 2)
 
   status InvoiceStatus @default(DRAFT)
 
   issuedAt DateTime?
-
-  dueAt DateTime?
+  dueAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -819,9 +705,11 @@ model Invoice {
   @@index([status])
 }
 
-
 // ============================================================
 // QUOTATION
+// Used for the in-store/offline flow: admin creates a
+// quotation, optionally from a template, and can convert it
+// into a confirmed Rental.
 // ============================================================
 
 model Quotation {
@@ -830,52 +718,28 @@ model Quotation {
   quotationNumber String @unique
 
   organizationId String
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   customerId String
-  customer   User @relation(
-    fields: [customerId],
-    references: [id],
-    onDelete: Restrict
-  )
+  customer   User   @relation("QuotationCustomer", fields: [customerId], references: [id], onDelete: Restrict)
 
   createdById String
-  createdBy   User @relation(
-    "QuotationCreatedBy",
-    fields: [createdById],
-    references: [id],
-    onDelete: Restrict
-  )
+  createdBy   User   @relation("QuotationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
 
   rentalId String? @unique
-  rental   Rental? @relation(
-    fields: [rentalId],
-    references: [id],
-    onDelete: SetNull
-  )
+  rental   Rental? @relation(fields: [rentalId], references: [id], onDelete: SetNull)
 
   templateId String?
-  template   QuotationTemplate? @relation(
-    fields: [templateId],
-    references: [id],
-    onDelete: SetNull
-  )
+  template   QuotationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
   status QuotationStatus @default(DRAFT)
 
   validUntil DateTime?
 
   subtotal Decimal @db.Decimal(10, 2)
-
   discount Decimal @default(0) @db.Decimal(10, 2)
-
-  tax Decimal @default(0) @db.Decimal(10, 2)
-
-  total Decimal @db.Decimal(10, 2)
+  tax      Decimal @default(0) @db.Decimal(10, 2)
+  total    Decimal @db.Decimal(10, 2)
 
   notes String? @db.Text
 
@@ -890,7 +754,6 @@ model Quotation {
   @@index([status])
 }
 
-
 // ============================================================
 // QUOTATION ITEMS
 // ============================================================
@@ -899,52 +762,36 @@ model QuotationItem {
   id String @id @default(cuid())
 
   quotationId String
-  quotation   Quotation @relation(
-    fields: [quotationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
 
   productId String
-  product   Product @relation(
-    fields: [productId],
-    references: [id],
-    onDelete: Restrict
-  )
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
-  quantity Int @default(1)
-
-  rentalDays Int @default(1)
-
+  quantity     Int     @default(1)
+  rentalDays   Int     @default(1)
   pricePerUnit Decimal @db.Decimal(10, 2)
-
-  subtotal Decimal @db.Decimal(10, 2)
+  subtotal     Decimal @db.Decimal(10, 2)
 
   @@index([quotationId])
   @@index([productId])
 }
 
-
 // ============================================================
 // QUOTATION TEMPLATES
+// Reusable header/footer/terms so admins can create
+// quotations faster.
 // ============================================================
 
 model QuotationTemplate {
   id String @id @default(cuid())
 
   organizationId String
-  organization   Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   name String
 
-  header String? @db.Text
-
-  footer String? @db.Text
-
+  header             String? @db.Text
+  footer             String? @db.Text
   termsAndConditions String? @db.Text
 
   active Boolean @default(true)
@@ -957,25 +804,20 @@ model QuotationTemplate {
   @@index([organizationId])
 }
 
-
 // ============================================================
 // NOTIFICATIONS
+// Pickup reminders, return reminders, overdue alerts, etc.
 // ============================================================
 
 model Notification {
   id String @id @default(cuid())
 
   userId String
-  user   User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type NotificationType
 
-  title String
-
+  title   String
   message String @db.Text
 
   read Boolean @default(false)
@@ -985,7 +827,6 @@ model Notification {
   @@index([userId])
   @@index([read])
 }
-
 
 // ============================================================
 // AUTHENTICATION
@@ -997,11 +838,7 @@ model RefreshToken {
   token String @unique @db.VarChar(512)
 
   userId String
-  user   User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   expiresAt DateTime
 
@@ -1009,7 +846,6 @@ model RefreshToken {
 
   @@index([userId])
 }
-
 
 model PasswordResetToken {
   id String @id @default(cuid())
@@ -1017,21 +853,15 @@ model PasswordResetToken {
   token String @unique @db.VarChar(512)
 
   userId String
-  user   User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   expiresAt DateTime
-
-  used Boolean @default(false)
+  used      Boolean  @default(false)
 
   createdAt DateTime @default(now())
 
   @@index([userId])
 }
-
 
 model EmailVerificationToken {
   id String @id @default(cuid())
@@ -1039,11 +869,7 @@ model EmailVerificationToken {
   token String @unique @db.VarChar(512)
 
   userId String
-  user   User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   expiresAt DateTime
 
