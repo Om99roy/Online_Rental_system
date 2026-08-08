@@ -30,6 +30,9 @@ export const registerUser = async (data: RegisterInput) => {
     data: {
       username: data.username,
       email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
       password: hashedPassword,
     },
     select: {
@@ -295,3 +298,5 @@ export const logoutUser = async (refreshToken: string) => {
     where: { token: refreshToken },
   });
 };
+
+

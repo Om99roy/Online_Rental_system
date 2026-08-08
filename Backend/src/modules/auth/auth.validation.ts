@@ -3,6 +3,9 @@ import { z } from "zod";
 export const registerSchema = z.object({
 	username: z.string().trim().min(2, "First name must be at least 2 characters").max(50),
 	email: z.string().trim().toLowerCase().email("Invalid email address"),
+        firstName: z.string().trim().min(1, "First name is required").max(50),
+        lastName: z.string().trim().min(1, "Last name is required").max(50),
+        phone: z.string().trim().min(7, "Enter a valid phone number").max(20),
 	password: z.string().min(8, "Password must be at least 8 characters").max(100, "Password cannot exceed 100 characters").superRefine((val, ctx) => {
 		if (!/[A-Z]/.test(val)) {
 			ctx.addIssue({

@@ -7,6 +7,8 @@ export const API = {
     LOGOUT: `${import.meta.env.VITE_API_BASE_URL}/auth/logout`,
     FORGOT_PASSWORD: `${import.meta.env.VITE_API_BASE_URL}/auth/forgot-password`,
     RESET_PASSWORD: `${import.meta.env.VITE_API_BASE_URL}/auth/reset-password`,
+    UPDATE_PROFILE: `${import.meta.env.VITE_API_BASE_URL}/auth/profile`, 
+    UPLOAD_AVATAR: `${import.meta.env.VITE_API_BASE_URL}/auth/profile/avatar`, 
   },
   ADMIN: {
     USERS: `${import.meta.env.VITE_API_BASE_URL}/admin/users`,

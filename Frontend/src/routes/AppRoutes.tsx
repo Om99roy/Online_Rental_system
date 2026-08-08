@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom"
 import Home from "../pages/Home.tsx"
-import Login from "../pages/Login.tsx"
+import Login from "../pages/login.tsx"
 import Register from "../pages/Register.tsx"
 import Dashboard from "../pages/Dashboard"
 import VerifyEmail from "../pages/VerifyEmail.tsx"
@@ -8,6 +8,8 @@ import ForgotPassword from "../pages/ForgotPassword.tsx"
 import ResetPassword from "../pages/ResetPassword.tsx"
 import Profile from "../pages/Profile.tsx"
 import AdminDashboard from "../pages/AdminDashboard.tsx"
+import Products from "../pages/Products.tsx"
+import Cart from "../pages/Cart.tsx"
 
 const AppRoutes = () => {
   return (
@@ -22,6 +24,8 @@ const AppRoutes = () => {
 	  <Route path="/reset-password" element={<ResetPassword />} />
 	  <Route path="/get-profile" element={<Profile />} />
 	  <Route path="/admin-dashboard" element={<AdminDashboard />} />
+	  <Route path="/products" element={<Products />} />
+	  <Route path="/cart" element={<Cart />} />
 	</Routes>
     </div>
   )

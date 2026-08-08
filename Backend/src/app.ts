@@ -9,7 +9,7 @@ import morgan from "morgan";
 import express from "express";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { globalLimiter } from "./middlewares/rateLimiters/globalLimiter";
-
+import path from "path";
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -24,6 +24,7 @@ app.use(express.json());
 app.use(compression());
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 app.get("/health", (_, res) => {
   res.status(200).json({

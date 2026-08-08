@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { loginSchema, type LoginInput } from "../lib/validation/auth.schema";
 import { API } from "../lib/api";
 import FormError from "../components/forms/FormError";
@@ -27,7 +27,8 @@ export default function Login() {
       toast.success("Login successful");
     } catch (e) {
       console.error(e);
-      toast.error("Login unsuccessful");
+      const message = e instanceof AxiosError ? e.response?.data?.message ?? "Login unsuccessful" : "Login unsuccessful";
+      toast.error(message);
     }
   }
 
@@ -51,7 +52,6 @@ export default function Login() {
               id="email"
               placeholder="you@example.com"
               {...register("email")}
-	      required
               className="w-full bg-surface-2 border placeholder:text-text-subtle rounded-lg px-4 py-2.5 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
             <FormError error={errors.email} />

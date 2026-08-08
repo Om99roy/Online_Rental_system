@@ -10,6 +10,7 @@ import {
   getProfile,
   logoutUser,
 } from "./auth.service.ts";
+import { updateProfile, updateAvatar } from "./auth.service.ts";
 
 import { AppError } from "../../utils/error.ts";
 
@@ -126,3 +127,5 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     next(error);
   }
 };
+
+

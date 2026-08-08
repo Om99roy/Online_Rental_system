@@ -6,8 +6,12 @@ import { registerLimiter } from "../../middlewares/rateLimiters/authLimiters/reg
 import { passwordResetLimiter } from "../../middlewares/rateLimiters/authLimiters/passwordResetLimiter.ts";
 import { forgotPasswordLimiter } from "../../middlewares/rateLimiters/authLimiters/forgotPasswordLimiter.ts";
 import { verifyEmailLimiter } from "../../middlewares/rateLimiters/authLimiters/verifyEmailLimiter.ts";
+import { uploadAvatar } from "../../middlewares/upload.middleware.ts";
 
 const authRouter = Router();
+
+authRouter.patch("/profile", authenticate, authController.updateProfileHandler);
+authRouter.post("/profile/avatar", authenticate, uploadAvatar, authController.uploadAvatarHandler);
 
 authRouter.post("/register", registerLimiter, authController.register);
 authRouter.post("/login", loginLimiter, authController.login);
