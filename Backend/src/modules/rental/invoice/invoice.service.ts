@@ -13,8 +13,10 @@ export const getRentalInvoiceService = async (
       customer: {
         select: {
           id: true,
-          name: true,
+          username: true,
           email: true,
+          firstName: true,
+          lastName: true,
           phone: true,
         },
       },
@@ -41,7 +43,9 @@ export const getRentalInvoiceService = async (
         },
       },
 
-      securityDeposit: true,
+      // IMPORTANT:
+      // Your Prisma relation is called "deposit"
+      deposit: true,
 
       pickup: true,
 
@@ -60,6 +64,21 @@ export const getRentalInvoiceService = async (
           },
         },
       },
+
+      // Your schema already contains Invoice
+      invoice: true,
+
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          logoUrl: true,
+          currency: true,
+        },
+      },
     },
   });
 
@@ -70,11 +89,9 @@ export const getRentalInvoiceService = async (
     );
   }
 
-  /*
-   * ============================
-   * RENTAL ITEMS
-   * ============================
-   */
+  // ============================================================
+  // RENTAL ITEMS
+  // ============================================================
 
   const items = rental.items.map((item) => ({
     id: item.id,
@@ -96,11 +113,9 @@ export const getRentalInvoiceService = async (
     ),
   }));
 
-  /*
-   * ============================
-   * RENTAL CHARGES
-   * ============================
-   */
+  // ============================================================
+  // RENTAL CHARGES
+  // ============================================================
 
   const subtotal = Number(
     rental.subtotal,
@@ -122,52 +137,46 @@ export const getRentalInvoiceService = async (
     rental.totalAmount,
   );
 
-  /*
-   * ============================
-   * SECURITY DEPOSIT
-   * ============================
-   */
+  // ============================================================
+  // SECURITY DEPOSIT
+  // ============================================================
 
   const securityDeposit =
-    rental.securityDeposit
+    rental.deposit
       ? {
-          id: rental.securityDeposit.id,
+          id: rental.deposit.id,
 
           amount: Number(
-            rental.securityDeposit.amount,
+            rental.deposit.amount,
           ),
 
           deductedAmount: Number(
-            rental.securityDeposit
-              .deductedAmount,
+            rental.deposit.deductedAmount,
           ),
 
           refundedAmount: Number(
-            rental.securityDeposit
-              .refundedAmount,
+            rental.deposit.refundedAmount,
           ),
 
           status:
-            rental.securityDeposit.status,
+            rental.deposit.status,
 
           collectedAt:
-            rental.securityDeposit
-              .collectedAt,
+            rental.deposit.collectedAt,
 
           settledAt:
-            rental.securityDeposit
-              .settledAt,
+            rental.deposit.settledAt,
 
           notes:
-            rental.securityDeposit.notes,
+            rental.deposit.notes,
+
+          type: rental.deposit.notes,
         }
       : null;
 
-  /*
-   * ============================
-   * PAYMENTS
-   * ============================
-   */
+  // ============================================================
+  // PAYMENTS
+  // ============================================================
 
   const payments = rental.payments.map(
     (payment) => ({
@@ -191,12 +200,6 @@ export const getRentalInvoiceService = async (
     }),
   );
 
-  /*
-   * Only successfully paid
-   * transactions count toward
-   * the amount paid.
-   */
-
   const totalPaid = payments
     .filter(
       (payment) =>
@@ -213,11 +216,9 @@ export const getRentalInvoiceService = async (
     totalAmount - totalPaid,
   );
 
-  /*
-   * ============================
-   * DAMAGE REPORTS
-   * ============================
-   */
+  // ============================================================
+  // DAMAGE REPORTS
+  // ============================================================
 
   const damageReports =
     rental.return?.damageReports.map(
@@ -249,6 +250,9 @@ export const getRentalInvoiceService = async (
 
         createdAt:
           report.createdAt,
+
+        updatedAt:
+          report.updatedAt,
       }),
     ) ?? [];
 
@@ -259,11 +263,9 @@ export const getRentalInvoiceService = async (
       0,
     );
 
-  /*
-   * ============================
-   * PICKUP
-   * ============================
-   */
+  // ============================================================
+  // PICKUP
+  // ============================================================
 
   const pickup = rental.pickup
     ? {
@@ -272,22 +274,23 @@ export const getRentalInvoiceService = async (
         scheduledAt:
           rental.pickup.scheduledAt,
 
-        confirmedAt:
-          rental.pickup.confirmedAt,
-
         status:
           rental.pickup.status,
 
+        confirmedAt:
+          rental.pickup.confirmedAt,
+
         notes:
           rental.pickup.notes,
+
+        createdAt:
+          rental.pickup.createdAt,
       }
     : null;
 
-  /*
-   * ============================
-   * RETURN
-   * ============================
-   */
+  // ============================================================
+  // RETURN
+  // ============================================================
 
   const returnData = rental.return
     ? {
@@ -316,53 +319,83 @@ export const getRentalInvoiceService = async (
           rental.return
             .lateByMinutes,
 
-        lateFee:
-          Number(
-            rental.return.lateFee,
-          ),
+        lateFee: Number(
+          rental.return.lateFee,
+        ),
 
         notes:
           rental.return.notes,
+
+        createdAt:
+          rental.return.createdAt,
+
+        updatedAt:
+          rental.return.updatedAt,
       }
     : null;
 
-  /*
-   * ============================
-   * INVOICE NUMBER
-   * ============================
-   *
-   * This is generated from the
-   * rental ID because your current
-   * Prisma schema does not have
-   * an Invoice model.
-   */
+  // ============================================================
+  // INVOICE
+  // ============================================================
 
-  const invoiceNumber =
-    `INV-${rental.id
-      .slice(0, 8)
-      .toUpperCase()}`;
+  const invoice = rental.invoice
+    ? {
+        id: rental.invoice.id,
 
-  /*
-   * ============================
-   * FINAL INVOICE
-   * ============================
-   */
+        invoiceNumber:
+          rental.invoice.invoiceNumber,
+
+        subtotal: Number(
+          rental.invoice.subtotal,
+        ),
+
+        tax: Number(
+          rental.invoice.tax,
+        ),
+
+        discount: Number(
+          rental.invoice.discount,
+        ),
+
+        total: Number(
+          rental.invoice.total,
+        ),
+
+        status:
+          rental.invoice.status,
+
+        issuedAt:
+          rental.invoice.issuedAt,
+
+        dueAt:
+          rental.invoice.dueAt,
+
+        createdAt:
+          rental.invoice.createdAt,
+
+        updatedAt:
+          rental.invoice.updatedAt,
+      }
+    : null;
+
+  // ============================================================
+  // FINAL INVOICE RESPONSE
+  // ============================================================
 
   return {
-    invoice: {
-      rentalId: rental.id,
+    invoice,
 
-      invoiceNumber,
+    organization:
+      rental.organization,
 
-      issuedAt: new Date(),
-
-      status: rental.status,
-    },
-
-    customer: rental.customer,
+    customer:
+      rental.customer,
 
     rental: {
       id: rental.id,
+
+      rentalNumber:
+        rental.rentalNumber,
 
       startDate:
         rental.startDate,
@@ -378,6 +411,9 @@ export const getRentalInvoiceService = async (
 
       status:
         rental.status,
+
+      notes:
+        rental.notes,
     },
 
     items,
@@ -428,6 +464,14 @@ export const getRentalInvoiceService = async (
 
       securityDeposit:
         securityDeposit?.amount ?? 0,
+
+      deductedDeposit:
+        securityDeposit
+          ?.deductedAmount ?? 0,
+
+      refundedDeposit:
+        securityDeposit
+          ?.refundedAmount ?? 0,
 
       totalPaid,
 
