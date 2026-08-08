@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "module": "commonjs",
+    "verbatimModuleSyntax": false
+  },
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/__tests__/**/*.ts",
+    "tests/**/*.ts",
+    "src/types/express.d.ts"
+  ]
+}
