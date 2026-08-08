@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import "dotenv/config";
 import authRoutes from "./modules/auth/auth.routes.ts";
-import { adminRouter } from "../modules/admin/admin.routes.ts";
+import { adminRouter } from "./modules/admin/admin.router.ts";
 import morgan from "morgan";
 import express from "express";
 import { errorMiddleware } from "./middlewares/error.middleware.ts";
@@ -63,6 +63,7 @@ app.use(
   globalLimiter,
   adminRouter,
 );
+
 
 app.use("/{*any}", (_, res) => {
   res.status(404).json({

@@ -1,7 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { AdminService } from ".admin.service";
-
-//const AdminService = new AdminService();
+import { AdminService } from "./admin.service.ts";
+import type { Role, AccountStatus } from "@prisma/client";
 
 const adminService = new AdminService();
 
@@ -25,7 +24,6 @@ export const getDashboard = async (
     }
 };
 
-
 /**
  * GET /api/v1/admin/users
  */
@@ -35,25 +33,14 @@ export const getUsers = async (
     next: NextFunction,
 ) => {
     try {
-        const {
-            page,
-            limit,
-            search,
-            role,
-            status,
-        } = req.query;
+        const { page, limit, search, role, status } = req.query;
 
         const data = await adminService.getUsers({
-            page: Number(page),
-            limit: Number(limit),
+            page: page ? Number(page) : 1,
+            limit: limit ? Number(limit) : 10,
             search: search as string | undefined,
-            role: role as "USER" | "ADMIN" | undefined,
-            status: status as
-                | "ACTIVE"
-                | "INACTIVE"
-                | "SUSPENDED"
-                | "DELETED"
-                | undefined,
+            role: role as Role | undefined,
+            status: status as AccountStatus | undefined,
         });
 
         return res.status(200).json({
@@ -65,7 +52,6 @@ export const getUsers = async (
     }
 };
 
-
 /**
  * GET /api/v1/admin/users/:id
  */
@@ -75,9 +61,7 @@ export const getUserById = async (
     next: NextFunction,
 ) => {
     try {
-        const user = await adminService.getUserById(
-            req.params.id,
-        );
+        const user = await adminService.getUserById(req.params.id as string);
 
         if (!user) {
             return res.status(404).json({
@@ -95,7 +79,6 @@ export const getUserById = async (
     }
 };
 
-
 /**
  * PATCH /api/v1/admin/users/:id/status
  */
@@ -105,11 +88,10 @@ export const updateUserStatus = async (
     next: NextFunction,
 ) => {
     try {
-        const user =
-            await adminService.updateUserStatus(
-                req.params.id,
-                req.body.status,
-            );
+        const user = await adminService.updateUserStatus(
+            req.params.id as string,
+            req.body.status as AccountStatus,
+        );
 
         return res.status(200).json({
             success: true,
@@ -121,7 +103,6 @@ export const updateUserStatus = async (
     }
 };
 
-
 /**
  * PATCH /api/v1/admin/users/:id/role
  */
@@ -131,11 +112,10 @@ export const updateUserRole = async (
     next: NextFunction,
 ) => {
     try {
-        const user =
-            await adminService.updateUserRole(
-                req.params.id,
-                req.body.role,
-            );
+        const user = await adminService.updateUserRole(
+            req.params.id as string,
+            req.body.role as Role,
+        );
 
         return res.status(200).json({
             success: true,
@@ -147,7 +127,6 @@ export const updateUserRole = async (
     }
 };
 
-
 /**
  * DELETE /api/v1/admin/users/:id
  */
@@ -157,10 +136,7 @@ export const deleteUser = async (
     next: NextFunction,
 ) => {
     try {
-        const user =
-            await adminService.deleteUser(
-                req.params.id,
-            );
+        const user = await adminService.deleteUser(req.params.id as string);
 
         return res.status(200).json({
             success: true,

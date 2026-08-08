@@ -51,7 +51,7 @@ jest.mock("../../../middlewares/authenticate.middleware", () => ({
   }),
 }));
 
-jest.mock("../../../admin/admin.router", () => ({
+jest.mock("../../admin/admin.router.ts", () => ({
   adminRouter: (_req: any, _res: any, next: any) => next(),
 }));
 
