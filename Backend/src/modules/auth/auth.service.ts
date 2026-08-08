@@ -36,9 +36,15 @@ export const registerUser = async (data: RegisterInput) => {
       id: true,
       username: true,
       email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
       role: true,
       status: true,
+      organizationId: true,
       emailVerified: true,
+      lastLoginAt: true,
       createdAt: true,
     },
   });
@@ -154,6 +160,7 @@ export const loginUser = async (data: LoginInput) => {
     id: updatedUser.id,
     email: updatedUser.email,
     role: updatedUser.role,
+    organizationId: updatedUser.organizationId
   };
 
   const accessToken = await generateAccessToken(payload);
@@ -174,8 +181,13 @@ export const loginUser = async (data: LoginInput) => {
     id: updatedUser.id,
     username: updatedUser.username,
     email: updatedUser.email,
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
+    phone: updatedUser.phone,
+    profileImageUrl: updatedUser.profileImageUrl,
     role: updatedUser.role,
     status: updatedUser.status,
+    organizationId: updatedUser.organizationId,
     emailVerified: updatedUser.emailVerified,
     lastLoginAt: updatedUser.lastLoginAt,
     createdAt: updatedUser.createdAt,
@@ -196,7 +208,7 @@ export const refreshAccessToken = async (token: string) => {
     throw new AppError("User not found.", 404);
   }
 
-  const payload = { id: user.id, email: user.email, role: user.role };
+  const payload = { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId };
   const accessToken = await generateAccessToken(payload);
 
   return accessToken;
@@ -264,8 +276,13 @@ export const getProfile = async (userId: string) => {
       id: true,
       username: true,
       email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
       role: true,
       status: true,
+      organizationId: true,
       emailVerified: true,
       lastLoginAt: true,
       createdAt: true,
