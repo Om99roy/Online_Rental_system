@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as rentalService from "./rental.services";
+import * as rentalService from "./rental.service";
 
 export const createRental = async (
   req: Request,
