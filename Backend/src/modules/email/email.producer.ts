@@ -15,6 +15,11 @@ type EmailJob =
 export const queueEmail = async (job: EmailJob) => {
   const channel = getChannel();
 
+  if (!channel) {
+    console.warn("⚠️ RabbitMQ channel unavailable. Skipping queueing email job:", job.type);
+    return;
+  }
+
   channel.sendToQueue(
     "email_queue",
     Buffer.from(

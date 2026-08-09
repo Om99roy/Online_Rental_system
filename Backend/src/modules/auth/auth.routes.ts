@@ -1,6 +1,8 @@
 import { Router } from "express";
 import * as authController from "./auth.controller.ts";
 import { authenticate } from "../../middlewares/authenticate.middleware.ts";
+import { validate } from "../../middlewares/validate.middleware.ts";
+import { loginSchema, registerSchema } from "./auth.validation.ts";
 import { loginLimiter } from "../../middlewares/rateLimiters/authLimiters/loginLimiter.ts";
 import { registerLimiter } from "../../middlewares/rateLimiters/authLimiters/registerLimiter.ts";
 import { passwordResetLimiter } from "../../middlewares/rateLimiters/authLimiters/passwordResetLimiter.ts";
@@ -9,8 +11,8 @@ import { verifyEmailLimiter } from "../../middlewares/rateLimiters/authLimiters/
 
 const authRouter = Router();
 
-authRouter.post("/register", registerLimiter, authController.register);
-authRouter.post("/login", loginLimiter, authController.login);
+authRouter.post("/register", registerLimiter, validate(registerSchema), authController.register);
+authRouter.post("/login", loginLimiter, validate(loginSchema), authController.login);
 authRouter.post(
   "/verify-email",
   verifyEmailLimiter,
@@ -32,3 +34,4 @@ authRouter.get("/profile", authenticate, authController.profile);
 authRouter.post("/logout", authController.logout);
 
 export default authRouter;
+

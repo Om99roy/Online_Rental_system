@@ -4,6 +4,11 @@ import { sendEmail } from "../config/mailer.ts";
 export const startEmailWorker = async () => {
   const channel = getChannel();
 
+  if (!channel) {
+    console.warn("⚠️ RabbitMQ channel unavailable. Worker not started.");
+    return;
+  }
+
   channel.consume("email_queue", async (msg) => {
     if (!msg) return;
 
