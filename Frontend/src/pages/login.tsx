@@ -19,15 +19,20 @@ export default function Login() {
   const navigate = useNavigate();
   async function onSubmit(data: LoginInput) {
     try {
-      const response = await axios.post(API.AUTH.LOGIN, data, { withCredentials: true });
+      const response = await axios.post(API.AUTH.LOGIN, data, {
+        withCredentials: true,
+      });
       const { user, accessToken } = response.data.data;
       useAuthStore.getState().setUser(user);
       localStorage.setItem("accessToken", accessToken);
-      navigate("/dashboard");
+      navigate("/products");
       toast.success("Login successful");
     } catch (e) {
       console.error(e);
-      const message = e instanceof AxiosError ? e.response?.data?.message ?? "Login unsuccessful" : "Login unsuccessful";
+      const message =
+        e instanceof AxiosError
+          ? (e.response?.data?.message ?? "Login unsuccessful")
+          : "Login unsuccessful";
       toast.error(message);
     }
   }
@@ -35,7 +40,9 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-8 shadow-xl">
-        <h1 className="text-3xl font-bold purple-fade-text mb-1">Welcome back</h1>
+        <h1 className="text-3xl font-bold purple-fade-text mb-1">
+          Welcome back
+        </h1>
         <p className="text-text-muted text-sm mb-8">
           Log in to continue your learning journey
         </p>
@@ -65,7 +72,7 @@ export default function Login() {
               >
                 Password
               </label>
-             <a 
+              <a
                 href="/forgot-password"
                 className="text-xs text-primary hover:text-secondary transition-colors"
               >
@@ -77,7 +84,7 @@ export default function Login() {
               type="password"
               placeholder="••••••••"
               {...register("password")}
-	      required
+              required
               className="w-full bg-surface-2 border placeholder:text-text-subtle rounded-lg px-4 py-2.5 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
             />
             <FormError error={errors.password} />
@@ -93,7 +100,10 @@ export default function Login() {
 
         <p className="text-center text-sm text-text-muted mt-6">
           Don't have an account?{" "}
-          <a href="/register" className="text-primary hover:text-secondary transition-colors">
+          <a
+            href="/register"
+            className="text-primary hover:text-secondary transition-colors"
+          >
             Sign up
           </a>
         </p>

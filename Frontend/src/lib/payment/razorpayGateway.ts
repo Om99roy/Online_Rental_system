@@ -22,7 +22,7 @@ export async function createPaymentOrder(
     receipt,
   };
 }
-
+export const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID ?? "";
 // In production this opens window.Razorpay({ ...options }).open() using
 // the checkout.js script, and resolves/rejects based on the handler callback.
 // Keeping the same function signature means Checkout.tsx doesn't change

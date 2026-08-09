@@ -13,6 +13,7 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 import { globalLimiter } from "./middlewares/rateLimiters/globalLimiter";
 import path from "path";
 import paymentRouter from "./modules/payments/payment.routes";
+
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -23,6 +24,7 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(express.json());
 app.use(compression());
 app.use(cookieParser());
@@ -36,8 +38,8 @@ app.get("/health", (_, res) => {
     timeStamp: new Date().toISOString(),
   });
 });
-app.get('/api/health', (_, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get("/api/health", (_, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 app.use("/api/v1/auth", globalLimiter, authRoutes);
 app.use("/api/v1/admin", globalLimiter, adminRouter);

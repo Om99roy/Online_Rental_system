@@ -1,45 +1,69 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { Address, NewAddressInput } from "../types/address";
+import {
+  fetchAddresses,
+  createAddressApi,
+  deleteAddressApi,
+  setDefaultAddressApi,
+} from "../lib/api/address.api";
+import toast from "react-hot-toast";
 
 interface AddressStore {
   addresses: Address[];
-  addAddress: (input: NewAddressInput) => Address;
-  removeAddress: (id: string) => void;
-  setDefault: (id: string) => void;
+  loading: boolean;
+  loadAddresses: () => Promise<void>;
+  addAddress: (input: NewAddressInput) => Promise<Address | null>;
+  removeAddress: (id: string) => Promise<void>;
+  setDefault: (id: string) => Promise<void>;
 }
 
-export const useAddressStore = create<AddressStore>()(
-  persist(
-    (set, get) => ({
-      addresses: [],
+export const useAddressStore = create<AddressStore>((set, get) => ({
+  addresses: [],
+  loading: false,
 
-      addAddress: (input) => {
-        const isFirst = get().addresses.length === 0;
-        const newAddress: Address = {
-          ...input,
-          id: crypto.randomUUID(),
-          isDefault: isFirst,
-        };
-        set((state) => ({ addresses: [...state.addresses, newAddress] }));
-        return newAddress;
-      },
+  loadAddresses: async () => {
+    set({ loading: true });
+    try {
+      const addresses = await fetchAddresses();
+      set({ addresses });
+    } catch (err) {
+      toast.error("Could not load addresses");
+    } finally {
+      set({ loading: false });
+    }
+  },
 
-      removeAddress: (id) => {
-        set((state) => ({
-          addresses: state.addresses.filter((a) => a.id !== id),
-        }));
-      },
+  addAddress: async (input) => {
+    try {
+      const newAddress = await createAddressApi(input);
+      set({ addresses: [...get().addresses, newAddress] });
+      return newAddress;
+    } catch (err) {
+      toast.error("Could not save address");
+      return null;
+    }
+  },
 
-      setDefault: (id) => {
-        set((state) => ({
-          addresses: state.addresses.map((a) => ({
-            ...a,
-            isDefault: a.id === id,
-          })),
-        }));
-      },
-    }),
-    { name: "address-storage" },
-  ),
-);
+  removeAddress: async (id) => {
+    try {
+      await deleteAddressApi(id);
+      set({ addresses: get().addresses.filter((a) => a.id !== id) });
+    } catch (err) {
+      toast.error("Could not remove address");
+    }
+  },
+
+  setDefault: async (id) => {
+    try {
+      await setDefaultAddressApi(id);
+      set({
+        addresses: get().addresses.map((a) => ({
+          ...a,
+          isDefault: a.id === id,
+        })),
+      });
+    } catch (err) {
+      toast.error("Could not update default address");
+    }
+  },
+}));

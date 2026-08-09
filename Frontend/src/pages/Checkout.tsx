@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/CartStore";
 import { useAddressStore } from "../store/AddressStore";
@@ -6,9 +6,12 @@ import AddressCard from "../components/address/AddressCard";
 import AddressForm from "../components/address/AddressForm";
 import type { PickupMethod } from "../types/checkout.ts";
 import type { PaymentMethod } from "../types/payment.ts";
-import { createPaymentOrder, initiatePayment } from "../lib/payment/razorpayGateway";
+import { createPaymentOrder } from "../lib/payment/razorpayGateway";
 import { placeOrderMock } from "../lib/mock/order.api";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/AuthContext.tsx";
+import { useRentalDashboardStore } from "../store/RentalDashboard.ts";
+import RazorpayModal from "../components/payment/RazorpayModal";
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "ONLINE", label: "Online (Razorpay)" },
@@ -23,21 +26,42 @@ export default function Checkout() {
   const subtotal = useCartStore((state) => state.subtotal());
   const totalDeposit = useCartStore((state) => state.totalDeposit());
   const clearCart = useCartStore((state) => state.clearCart);
-
+  const user = useAuthStore((state) => state.user);
   const addresses = useAddressStore((state) => state.addresses);
+  const addressesLoading = useAddressStore((state) => state.loading);
+  const loadAddresses = useAddressStore((state) => state.loadAddresses);
   const addAddress = useAddressStore((state) => state.addAddress);
   const removeAddress = useAddressStore((state) => state.removeAddress);
+  const addRental = useRentalDashboardStore((state) => state.addRental);
 
-  const [pickupMethod, setPickupMethod] = useState<PickupMethod>("STORE_PICKUP");
+  const [pickupMethod, setPickupMethod] =
+    useState<PickupMethod>("STORE_PICKUP");
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    addresses.find((a) => a.isDefault)?.id ?? null
+    null,
   );
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("ONLINE");
   const [placing, setPlacing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState<{
+    orderId: string;
+    amount: number;
+  } | null>(null);
+
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
+
+  useEffect(() => {
+    if (!selectedAddressId && addresses.length > 0) {
+      const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
+      setSelectedAddressId(defaultAddr.id);
+    }
+  }, [addresses, selectedAddressId]);
 
   const grandTotal = subtotal + totalDeposit;
-  const selectedAddress = addresses.find((a) => a.id === selectedAddressId) ?? null;
+  const selectedAddress =
+    addresses.find((a) => a.id === selectedAddressId) ?? null;
 
   if (items.length === 0) {
     return (
@@ -56,29 +80,69 @@ export default function Checkout() {
   }
 
   async function handlePlaceOrder() {
+    if (!user) {
+      toast.error("Please log in to complete checkout");
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
     if (pickupMethod === "DELIVERY" && !selectedAddress) {
       toast.error("Select a delivery address first");
       return;
     }
 
+    // Cash at store skips the payment gateway entirely — matches real
+    // Razorpay behavior (you don't open a card modal for cash orders).
+    if (paymentMethod === "CASH") {
+      setPlacing(true);
+      await finalizeOrder("cash_on_pickup");
+      return;
+    }
+
     setPlacing(true);
     try {
-      const order = await createPaymentOrder(grandTotal, `checkout_${Date.now()}`);
-      const payment = await initiatePayment(order, paymentMethod);
+      const order = await createPaymentOrder(
+        grandTotal,
+        `checkout_${Date.now()}`,
+      );
+      setPaymentOrder(order);
+      setShowPaymentModal(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not start payment. Please try again.");
+      setPlacing(false);
+    }
+  }
 
-      if (!payment.success) {
-        throw new Error("Payment failed");
-      }
-
+  async function finalizeOrder(paymentId: string) {
+    try {
       const placed = await placeOrderMock({
         items,
         pickupMethod,
         address: pickupMethod === "DELIVERY" ? selectedAddress : null,
         paymentMethod,
-        paymentId: payment.paymentId,
+        paymentId,
         subtotal,
         deposit: totalDeposit,
         total: grandTotal,
+      });
+
+      addRental({
+        id: placed.rentalNumber,
+        rentalNumber: placed.rentalNumber,
+        customerName: user
+          ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+            user.username
+          : "Guest",
+        customerEmail: user?.email ?? "unknown@example.com",
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: new Date(
+          Date.now() + Math.max(...items.map((i) => i.rentalDays)) * 86400000,
+        )
+          .toISOString()
+          .slice(0, 10),
+        itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
+        totalAmount: grandTotal,
+        status: "CONFIRMED",
       });
 
       clearCart();
@@ -89,7 +153,21 @@ export default function Checkout() {
       toast.error("Could not place order. Please try again.");
     } finally {
       setPlacing(false);
+      setShowPaymentModal(false);
     }
+  }
+
+  async function handleAddAddress(data: Parameters<typeof addAddress>[0]) {
+    const newAddr = await addAddress(data);
+    if (newAddr) {
+      setSelectedAddressId(newAddr.id);
+      setShowAddressForm(false);
+    }
+  }
+
+  async function handleRemoveAddress(id: string) {
+    await removeAddress(id);
+    if (selectedAddressId === id) setSelectedAddressId(null);
   }
 
   return (
@@ -112,7 +190,9 @@ export default function Checkout() {
                   }`}
                 >
                   <p className="font-medium text-sm">Store pickup</p>
-                  <p className="text-xs text-text-muted mt-1">Collect from our location</p>
+                  <p className="text-xs text-text-muted mt-1">
+                    Collect from our location
+                  </p>
                 </button>
                 <button
                   onClick={() => setPickupMethod("DELIVERY")}
@@ -123,7 +203,9 @@ export default function Checkout() {
                   }`}
                 >
                   <p className="font-medium text-sm">Delivery</p>
-                  <p className="text-xs text-text-muted mt-1">We'll ship it to you</p>
+                  <p className="text-xs text-text-muted mt-1">
+                    We'll ship it to you
+                  </p>
                 </button>
               </div>
             </div>
@@ -146,14 +228,16 @@ export default function Checkout() {
                 {showAddressForm ? (
                   <AddressForm
                     onCancel={() => setShowAddressForm(false)}
-                    onSubmit={(data) => {
-                      const newAddr = addAddress(data);
-                      setSelectedAddressId(newAddr.id);
-                      setShowAddressForm(false);
-                    }}
+                    onSubmit={handleAddAddress}
                   />
+                ) : addressesLoading ? (
+                  <p className="text-sm text-text-muted">
+                    Loading addresses...
+                  </p>
                 ) : addresses.length === 0 ? (
-                  <p className="text-sm text-text-muted">No saved addresses yet. Add one to continue.</p>
+                  <p className="text-sm text-text-muted">
+                    No saved addresses yet. Add one to continue.
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {addresses.map((address) => (
@@ -162,10 +246,7 @@ export default function Checkout() {
                         address={address}
                         selected={address.id === selectedAddressId}
                         onSelect={() => setSelectedAddressId(address.id)}
-                        onRemove={() => {
-                          removeAddress(address.id);
-                          if (selectedAddressId === address.id) setSelectedAddressId(null);
-                        }}
+                        onRemove={() => handleRemoveAddress(address.id)}
                       />
                     ))}
                   </div>
@@ -199,12 +280,20 @@ export default function Checkout() {
             <h3 className="font-semibold mb-4">Order Summary</h3>
             <div className="space-y-2 text-sm max-h-64 overflow-y-auto mb-4">
               {items.map((item) => (
-                <div key={item.product.id} className="flex justify-between text-text-muted">
+                <div
+                  key={item.product.id}
+                  className="flex justify-between text-text-muted"
+                >
                   <span className="truncate pr-2">
                     {item.product.name} × {item.quantity} ({item.rentalDays}d)
                   </span>
                   <span className="flex-shrink-0">
-                    ₹{(item.product.pricePerDay * item.quantity * item.rentalDays).toLocaleString("en-IN")}
+                    ₹
+                    {(
+                      item.product.pricePerDay *
+                      item.quantity *
+                      item.rentalDays
+                    ).toLocaleString("en-IN")}
                   </span>
                 </div>
               ))}
@@ -229,11 +318,29 @@ export default function Checkout() {
               disabled={placing}
               className="w-full bg-primary hover:bg-secondary transition-colors text-white font-semibold rounded-lg py-2.5 mt-5 disabled:opacity-50"
             >
-              {placing ? "Processing..." : `Pay ₹${grandTotal.toLocaleString("en-IN")}`}
+              {placing
+                ? "Processing..."
+                : paymentMethod === "CASH"
+                  ? "Place Order (Pay at Store)"
+                  : `Pay ₹${grandTotal.toLocaleString("en-IN")}`}
             </button>
           </div>
         </div>
       </div>
+
+      {paymentOrder && (
+        <RazorpayModal
+          open={showPaymentModal}
+          amount={paymentOrder.amount}
+          orderId={paymentOrder.orderId}
+          onSuccess={(paymentId) => finalizeOrder(paymentId)}
+          onCancel={() => {
+            setShowPaymentModal(false);
+            setPlacing(false);
+            toast.error("Payment cancelled");
+          }}
+        />
+      )}
     </div>
   );
 }

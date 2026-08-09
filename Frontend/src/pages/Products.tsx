@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { fetchProductsMock } from "../lib/mock/product.api.ts";
+import { fetchProducts } from "../lib/api/product.api.ts";
 import type {
   Product,
   ProductFilters as ProductFiltersType,
 } from "../types/product";
 import { useDebounce } from "../hooks/useDebounce";
-import SearchBar from "../components/products/SearchBar";
 import ProductCard from "../components/products/ProductCard";
 import ProductCardSkeleton from "../components/products/ProductSkeleton.tsx";
 import Pagination from "../components/products/Pagination";
 import ProductFiltersPanel from "../components/products/ProductFilters";
+import Navbar from "../components/Navbar.tsx";
 
 const PAGE_SIZE = 8;
 
@@ -41,7 +41,7 @@ export default function Products() {
 
     async function load() {
       setLoading(true);
-      const res = await fetchProductsMock({
+      const res = await fetchProducts({
         page,
         limit: PAGE_SIZE,
         search: debouncedSearch,
@@ -73,11 +73,7 @@ export default function Products() {
             Find and rent the equipment you need
           </p>
         </div>
-
-        <div className="max-w-md mb-6">
-          <SearchBar value={search} onChange={setSearch} />
-        </div>
-
+        <Navbar searchValue={search} onSearchChange={setSearch} />
         <div className="grid lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
             {(facets?.brands?.length ?? 0) > 0 && (

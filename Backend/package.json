@@ -8,7 +8,8 @@
     "dev:local": "bun --watch --env-file=.env.local src/server.ts",
     "start": "bun src/server.ts",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "seed:product": "bun run prisma/seedProduct.ts"
   }, 
   "prisma": {
     "seed": "bun run prisma/seed.ts"

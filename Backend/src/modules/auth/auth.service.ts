@@ -299,4 +299,55 @@ export const logoutUser = async (refreshToken: string) => {
   });
 };
 
+export const updateProfile = async (
+  userId: string,
+  data: { firstName?: string; lastName?: string; username?: string; phone?: string }
+) => {
+  if (data.username) {
+    const existing = await prisma.user.findUnique({ where: { username: data.username } });
+    if (existing && existing.id !== userId) {
+      throw new AppError("Username already taken.", 409);
+    }
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data,
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
+      role: true,
+      status: true,
+      emailVerified: true,
+      lastLoginAt: true,
+      createdAt: true,
+    },
+  });
+};
+
+export const updateAvatar = async (userId: string, imageUrl: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { profileImageUrl: imageUrl },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
+      role: true,
+      status: true,
+      emailVerified: true,
+      lastLoginAt: true,
+      createdAt: true,
+    },
+  });
+};
 

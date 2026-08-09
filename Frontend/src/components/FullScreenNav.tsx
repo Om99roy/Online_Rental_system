@@ -11,61 +11,55 @@ const FullScreenNav = () => {
   const fullNavLinksRef = useRef(null);
   const fullScreenRef = useRef(null);
   const context = useContext(NavbarContext);
-  if(!context) throw new Error("NavbarContext must be used within NavbarProvider");
+  if (!context)
+    throw new Error("NavbarContext must be used within NavbarProvider");
   const [navOpen, setNavOpen] = context;
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
-  const links = useMemo(() => { 
-  const nav = [
-    { title: "Home", path: "/" },
-    { title: "About", path: "/about" },
-  ];
+  const links = useMemo(() => {
+    const nav = [
+      { title: "Home", path: "/" },
+      { title: "About", path: "/about" },
+      { title: "Cart", path: "/cart" },
+    ];
 
-  if (!user) {
-    nav.push(
-      { title: "Login", path: "/login" },
-      { title: "Register", path: "/register" }
-    );
-  } else {
-    nav.push(
-      { title: "Dashboard", path: "/dashboard" },
-      { title: "Profile", path: "/profile" }
-    );
-
-    if (user.role === "ADMIN") {
-      nav.push({
-        title: "Admin",
-        path: "/admin",
-      });
-    }
-
-    nav.push({
-      title: "Logout",
-      path: "/logout",
-    });
-  }
-  return nav;
-}, [user]);
-   async function handleLogout(e: React.MouseEvent<HTMLAnchorElement>) {
-	   e.preventDefault();
-  try {
-    await axios.post(
-      API.AUTH.LOGOUT,
-      {},
-      {
-        withCredentials: true,
+    if (!user) {
+      nav.push(
+        { title: "Login", path: "/login" },
+        { title: "Register", path: "/register" },
+      );
+    } else {
+      nav.push(
+        { title: "Dashboard", path: "/dashboard" },
+        { title: "Profile", path: "/get-profile" },
+      );
+      if (user.role === "ADMIN") {
+        nav.push({ title: "Admin", path: "/admin-dashboard" });
       }
-    );
+      nav.push({ title: "Logout", path: "/logout" });
+    }
+    return nav;
+  }, [user]);
+  async function handleLogout(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    try {
+      await axios.post(
+        API.AUTH.LOGOUT,
+        {},
+        {
+          withCredentials: true,
+        },
+      );
 
-    useAuthStore.getState().logout();
+      useAuthStore.getState().logout();
 
-    setNavOpen(false);
+      setNavOpen(false);
 
-    navigate("/");
-  } catch (e) {
-    console.error(e);
+      navigate("/");
+    } catch (e) {
+      console.error(e);
+    }
   }
-}
   function gsapAnimation() {
     const tl = gsap.timeline();
     tl.to(".fullscreennav", {
@@ -127,7 +121,8 @@ const FullScreenNav = () => {
     <div
       ref={fullScreenRef}
       id="fullscreennav"
-      className="fullscreennav hidden text-white overflow-hidden h-screen w-full z-34 absolute">
+      className="fullscreennav hidden text-white overflow-hidden h-screen w-full z-34 absolute"
+    >
       <div className="h-screen w-full fixed">
         <div className="h-full w-full flex">
           <div className="stairing h-full w-1/5 bg-black"></div>
@@ -141,9 +136,9 @@ const FullScreenNav = () => {
         <div className="navlink flex w-full justify-between lg:p-5 p-2 items-start">
           <div>
             <div className="lg:w-36 w-24 lg:h-25 h-auto flex items-center">
-        	<div className='lg:w-28 w-15 text-3xl h-auto purple-fade-text font-bold'>	
-			MentourAi
-                </div>
+              <div className="lg:w-28 w-15 text-3xl h-auto purple-fade-text font-bold">
+                MentourAi
+              </div>
             </div>
           </div>
           <div
@@ -159,15 +154,15 @@ const FullScreenNav = () => {
         <div className="">
           {links.map((item, idx) => (
             <Link
-	      to={item.path}
+              to={item.path}
               key={idx}
-	      onClick={item.title === "Logout" ? handleLogout : undefined}
+              onClick={item.title === "Logout" ? handleLogout : undefined}
               className="link group relative block w-full overflow-hidden border-t border-white cursor-pointer"
             >
               <h1 className="relative z-10 text-2xl lg:text-[3vw] text-center uppercase py-2 lg:py-3 transition-all duration-500 group-hover:text-black">
                 {item.title}
               </h1>
-              <div className="absolute inset-0 bg-primary -translate-y-full h-full w-full transition-transform duration-500 group-hover:translate-y-0"/>
+              <div className="absolute inset-0 bg-primary -translate-y-full h-full w-full transition-transform duration-500 group-hover:translate-y-0" />
               <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full overflow-hidden opacity-0 group-hover:opacity-100 transition-all duration-300">
                 <div className="flex whitespace-nowrap animate-marquee">
                   <span className="mx-10 text-black text-3xl lg:text-6xl">
@@ -182,7 +177,7 @@ const FullScreenNav = () => {
                 </div>
               </div>
             </Link>
-	  ))}
+          ))}
         </div>
       </div>
     </div>
@@ -190,4 +185,3 @@ const FullScreenNav = () => {
 };
 
 export default FullScreenNav;
-
