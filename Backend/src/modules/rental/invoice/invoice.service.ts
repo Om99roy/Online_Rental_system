@@ -170,7 +170,6 @@ export const getRentalInvoiceService = async (
           notes:
             rental.deposit.notes,
 
-          type: rental.deposit.notes,
         }
       : null;
 

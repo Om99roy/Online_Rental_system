@@ -9,6 +9,13 @@ import morgan from "morgan";
 import express from "express";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { globalLimiter } from "./middlewares/rateLimiters/globalLimiter";
+import rentalItemRoutes from "./modules/rental/rentalItem/rentalItem.routes";
+import paymentRoutes from "./modules/rental/payment/payment.routes";
+import pickupRoutes from "./modules/rental/pickup/pickup.routes";
+import returnRoutes from "./modules/rental/return/return.routes";
+import securityDepositRoutes from "./modules/rental/securityDeposit/securityDeposit.routes";
+import damageReportRoutes from "./modules/rental/damageReport/damageReportt.routes";
+import invoiceRoutes from "./modules/rental/invoice/invoice.routes";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -41,6 +48,48 @@ app.use("/api/v1/admin", globalLimiter, adminRouter);
 app.use("/{*any}", (_, res) => {
   res.status(404).json({ message: "Route not found" });
 });
+
+app.use(
+  "/api/v1/rental-items",
+  globalLimiter,
+  rentalItemRoutes,
+);
+
+app.use(
+  "/api/v1/payments",
+  globalLimiter,
+  paymentRoutes,
+);
+
+app.use(
+  "/api/v1/pickups",
+  globalLimiter,
+  pickupRoutes,
+);
+
+app.use(
+  "/api/v1/returns",
+  globalLimiter,
+  returnRoutes,
+);
+
+app.use(
+  "/api/v1/security-deposits",
+  globalLimiter,
+  securityDepositRoutes,
+);
+
+app.use(
+  "/api/v1/damage-reports",
+  globalLimiter,
+  damageReportRoutes,
+);
+
+app.use(
+  "/api/v1/rentals",
+  globalLimiter,
+  invoiceRoutes,
+);
 
 app.use(errorMiddleware);
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as securityDepositController from "./securityDeposit.controller.ts";
+import * as securityDepositController from "./securityDeposit.controler.ts";
 import { authenticate } from "../../../middlewares/authenticate.middleware.ts";
 
 const router = Router();

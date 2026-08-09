@@ -3,6 +3,6 @@ import { createRental } from "./rental.controler";
 
 const router = Router();
 
-router.post("/", createRental);
+router.post("makeway", createRental);
 
 export default router;
