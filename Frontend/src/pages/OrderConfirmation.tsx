@@ -44,7 +44,7 @@ export default function OrderConfirmation() {
         </div>
 
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/rentals")}
           className="w-full bg-primary hover:bg-secondary transition-colors text-white font-semibold rounded-lg py-2.5"
         >
           Go to Dashboard
