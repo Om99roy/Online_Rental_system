@@ -30,15 +30,24 @@ export const registerUser = async (data: RegisterInput) => {
     data: {
       username: data.username,
       email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
       password: hashedPassword,
     },
     select: {
       id: true,
       username: true,
       email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
       role: true,
       status: true,
+      organizationId: true,
       emailVerified: true,
+      lastLoginAt: true,
       createdAt: true,
     },
   });
@@ -154,6 +163,7 @@ export const loginUser = async (data: LoginInput) => {
     id: updatedUser.id,
     email: updatedUser.email,
     role: updatedUser.role,
+    organizationId: updatedUser.organizationId
   };
 
   const accessToken = await generateAccessToken(payload);
@@ -174,8 +184,13 @@ export const loginUser = async (data: LoginInput) => {
     id: updatedUser.id,
     username: updatedUser.username,
     email: updatedUser.email,
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
+    phone: updatedUser.phone,
+    profileImageUrl: updatedUser.profileImageUrl,
     role: updatedUser.role,
     status: updatedUser.status,
+    organizationId: updatedUser.organizationId,
     emailVerified: updatedUser.emailVerified,
     lastLoginAt: updatedUser.lastLoginAt,
     createdAt: updatedUser.createdAt,
@@ -196,7 +211,7 @@ export const refreshAccessToken = async (token: string) => {
     throw new AppError("User not found.", 404);
   }
 
-  const payload = { id: user.id, email: user.email, role: user.role };
+  const payload = { id: user.id, email: user.email, role: user.role, organizationId: user.organizationId };
   const accessToken = await generateAccessToken(payload);
 
   return accessToken;
@@ -264,8 +279,13 @@ export const getProfile = async (userId: string) => {
       id: true,
       username: true,
       email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
       role: true,
       status: true,
+      organizationId: true,
       emailVerified: true,
       lastLoginAt: true,
       createdAt: true,
@@ -278,3 +298,56 @@ export const logoutUser = async (refreshToken: string) => {
     where: { token: refreshToken },
   });
 };
+
+export const updateProfile = async (
+  userId: string,
+  data: { firstName?: string; lastName?: string; username?: string; phone?: string }
+) => {
+  if (data.username) {
+    const existing = await prisma.user.findUnique({ where: { username: data.username } });
+    if (existing && existing.id !== userId) {
+      throw new AppError("Username already taken.", 409);
+    }
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data,
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
+      role: true,
+      status: true,
+      emailVerified: true,
+      lastLoginAt: true,
+      createdAt: true,
+    },
+  });
+};
+
+export const updateAvatar = async (userId: string, imageUrl: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { profileImageUrl: imageUrl },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      profileImageUrl: true,
+      role: true,
+      status: true,
+      emailVerified: true,
+      lastLoginAt: true,
+      createdAt: true,
+    },
+  });
+};
+

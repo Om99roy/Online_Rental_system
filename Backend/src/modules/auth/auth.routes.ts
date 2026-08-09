@@ -8,11 +8,29 @@ import { registerLimiter } from "../../middlewares/rateLimiters/authLimiters/reg
 import { passwordResetLimiter } from "../../middlewares/rateLimiters/authLimiters/passwordResetLimiter.ts";
 import { forgotPasswordLimiter } from "../../middlewares/rateLimiters/authLimiters/forgotPasswordLimiter.ts";
 import { verifyEmailLimiter } from "../../middlewares/rateLimiters/authLimiters/verifyEmailLimiter.ts";
+import { uploadAvatar } from "../../middlewares/upload.middleware.ts";
 
 const authRouter = Router();
 
-authRouter.post("/register", registerLimiter, validate(registerSchema), authController.register);
-authRouter.post("/login", loginLimiter, validate(loginSchema), authController.login);
+authRouter.post(
+  "/register",
+  registerLimiter,
+  validate(registerSchema),
+  authController.register,
+);
+authRouter.post(
+  "/login",
+  loginLimiter,
+  validate(loginSchema),
+  authController.login,
+);
+authRouter.patch("/profile", authenticate, authController.updateProfileHandler);
+authRouter.post(
+  "/profile/avatar",
+  authenticate,
+  uploadAvatar,
+  authController.uploadAvatarHandler,
+);
 authRouter.post(
   "/verify-email",
   verifyEmailLimiter,
@@ -34,4 +52,3 @@ authRouter.get("/profile", authenticate, authController.profile);
 authRouter.post("/logout", authController.logout);
 
 export default authRouter;
-

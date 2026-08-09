@@ -16,6 +16,10 @@ import returnRoutes from "./modules/rental/return/return.routes";
 import securityDepositRoutes from "./modules/rental/securityDeposit/securityDeposit.routes";
 import damageReportRoutes from "./modules/rental/damageReport/damageReportt.routes";
 import invoiceRoutes from "./modules/rental/invoice/invoice.routes";
+import productsRouter from "./modules/products/products.routes";
+import addressRouter from "./modules/addresses/address.routes";
+import checkoutRouter from "./modules/payments/payment.routes";
+import path from "path";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -36,6 +40,7 @@ app.use(express.json());
 app.use(compression());
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 app.get("/health", (_, res) => {
   res.status(200).json({
@@ -57,6 +62,11 @@ app.use("/api/v1/auth", globalLimiter, authRoutes);
 // Admin
 app.use("/api/v1/admin", globalLimiter, adminRouter);
 
+// Commerce (products / addresses / checkout)
+app.use("/api/v1/products", globalLimiter, productsRouter);
+app.use("/api/v1/addresses", globalLimiter, addressRouter);
+app.use("/api/v1/checkout", globalLimiter, checkoutRouter);
+
 // Rental lifecycle
 app.use("/api/v1/rental-items", globalLimiter, rentalItemRoutes);
 app.use("/api/v1/payments", globalLimiter, paymentRoutes);
@@ -67,13 +77,10 @@ app.use("/api/v1/damage-reports", globalLimiter, damageReportRoutes);
 app.use("/api/v1/rentals", globalLimiter, invoiceRoutes);
 
 // 404 catch-all — MUST stay last, after every real route
-app.use((_, res) => {
-  res.status(404).json({
-    message: "Route not found",
-  });
+app.use("/{*any}", (_, res) => {
+  res.status(404).json({ message: "Route not found" });
 });
 
 app.use(errorMiddleware);
 
 export default app;
-

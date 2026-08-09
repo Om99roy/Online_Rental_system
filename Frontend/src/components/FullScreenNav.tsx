@@ -1,192 +1,52 @@
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { useContext, useMemo, useRef } from "react";
-import { NavbarContext } from "../store/NavContext.tsx";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/AuthContext.tsx";
-import { API } from "../lib/api";
-import axios from "axios";
+import { Route, Routes } from "react-router-dom";
 
-const FullScreenNav = () => {
-  const fullNavLinksRef = useRef(null);
-  const fullScreenRef = useRef(null);
-  const context = useContext(NavbarContext);
-  if(!context) throw new Error("NavbarContext must be used within NavbarProvider");
-  const [navOpen, setNavOpen] = context;
-  const user = useAuthStore((state) => state.user);
-  const navigate = useNavigate();
-  const links = useMemo(() => { 
-  const nav = [
-    { title: "Home", path: "/" },
-    { title: "About", path: "/about" },
-  ];
+import Home from "../pages/Home.tsx";
+import Login from "../pages/login.tsx";
+import Register from "../pages/Register.tsx";
+import Dashboard from "../pages/Dashboard";
+import VerifyEmail from "../pages/VerifyEmail.tsx";
+import ForgotPassword from "../pages/ForgotPassword.tsx";
+import ResetPassword from "../pages/ResetPassword.tsx";
+import Profile from "../pages/Profile.tsx";
+import AdminDashboard from "../pages/AdminDashboard.tsx";
+import RentalDashboard from "../pages/rental/RentalDashboard.tsx";
+import CreateRental from "../pages/rental/CreateRental.tsx";
+import RentalDetails from "../pages/rental/RentalDetails.tsx";
+import RentalItems from "../pages/rental/RentalItems.tsx";
+import EditProfile from "../pages/EditProfile.tsx";
+import Products from "../pages/Products.tsx";
+import Cart from "../pages/Cart.tsx";
+import Checkout from "../pages/Checkout.tsx";
+import OrderConfirmation from "../pages/OrderConfirmation.tsx";
+import ProtectedRoute from "../routes/ProtectedRoute.tsx";
 
-  if (!user) {
-    nav.push(
-      { title: "Login", path: "/login" },
-      { title: "Register", path: "/register" }
-    );
-  } else {
-    nav.push(
-      { title: "Dashboard", path: "/dashboard" },
-      { title: "Profile", path: "/profile" }
-    );
-
-    if (user.role === "ADMIN") {
-      nav.push({
-        title: "Admin",
-        path: "/admin",
-      });
-    }
-
-    nav.push({
-      title: "Logout",
-      path: "/logout",
-    });
-  }
-  return nav;
-}, [user]);
-   async function handleLogout(e: React.MouseEvent<HTMLAnchorElement>) {
-	   e.preventDefault();
-  try {
-    await axios.post(
-      API.AUTH.LOGOUT,
-      {},
-      {
-        withCredentials: true,
-      }
-    );
-
-    useAuthStore.getState().logout();
-
-    setNavOpen(false);
-
-    navigate("/");
-  } catch (e) {
-    console.error(e);
-  }
-}
-  function gsapAnimation() {
-    const tl = gsap.timeline();
-    tl.to(".fullscreennav", {
-      display: "block",
-    });
-    tl.to(".stairing", {
-      delay: 0.2,
-      height: "100%",
-      stagger: {
-        amount: -0.3,
-      },
-    });
-    tl.to(".link", {
-      opacity: 1,
-      rotateX: 0,
-      stagger: {
-        amount: 0.3,
-      },
-    });
-    tl.to(".navlink", {
-      opacity: 1,
-    });
-  }
-  function gsapAnimationReverse() {
-    const tl = gsap.timeline();
-    tl.to(".link", {
-      opacity: 0,
-      rotateX: 90,
-      stagger: {
-        amount: 0.1,
-      },
-    });
-    tl.to(".stairing", {
-      height: 0,
-      stagger: {
-        amount: 0.1,
-      },
-    });
-    tl.to(".navlink", {
-      opacity: 0,
-    });
-    tl.to(".fullscreennav", {
-      display: "none",
-    });
-  }
-
-  useGSAP(
-    function () {
-      if (navOpen) {
-        gsapAnimation();
-      } else {
-        gsapAnimationReverse();
-      }
-    },
-    [navOpen],
-  );
-
+const AppRoutes = () => {
   return (
-    <div
-      ref={fullScreenRef}
-      id="fullscreennav"
-      className="fullscreennav hidden text-white overflow-hidden h-screen w-full z-34 absolute">
-      <div className="h-screen w-full fixed">
-        <div className="h-full w-full flex">
-          <div className="stairing h-full w-1/5 bg-black"></div>
-          <div className="stairing h-full w-1/5 bg-black"></div>
-          <div className="stairing h-full w-1/5 bg-black"></div>
-          <div className="stairing h-full w-1/5 bg-black"></div>
-          <div className="stairing h-full w-1/5 bg-black"></div>
-        </div>
-      </div>
-      <div ref={fullNavLinksRef} className="relative">
-        <div className="navlink flex w-full justify-between lg:p-5 p-2 items-start">
-          <div>
-            <div className="lg:w-36 w-24 lg:h-25 h-auto flex items-center">
-        	<div className='lg:w-28 w-15 text-3xl h-auto purple-fade-text font-bold'>	
-			MentourAi
-                </div>
-            </div>
-          </div>
-          <div
-            onClick={() => {
-              setNavOpen(false);
-            }}
-            className="lg:h-32 h-20 w-20 lg:w-32 relative cursor-pointer"
-          >
-            <div className="lg:h-44 h-28 lg:w-1 w-0.5 -rotate-45 origin-top absolute bg-primary"></div>
-            <div className="lg:h-44 h-28 lg:w-1 w-0.5 right-0 rotate-45 origin-top absolute bg-secondary"></div>
-          </div>
-        </div>
-        <div className="">
-          {links.map((item, idx) => (
-            <Link
-	      to={item.path}
-              key={idx}
-	      onClick={item.title === "Logout" ? handleLogout : undefined}
-              className="link group relative block w-full overflow-hidden border-t border-white cursor-pointer"
-            >
-              <h1 className="relative z-10 text-2xl lg:text-[3vw] text-center uppercase py-2 lg:py-3 transition-all duration-500 group-hover:text-black">
-                {item.title}
-              </h1>
-              <div className="absolute inset-0 bg-primary -translate-y-full h-full w-full transition-transform duration-500 group-hover:translate-y-0"/>
-              <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full overflow-hidden opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <div className="flex whitespace-nowrap animate-marquee">
-                  <span className="mx-10 text-black text-3xl lg:text-6xl">
-                    Explore {item.title}
-                  </span>
-                  <span className="mx-10 text-black text-3xl lg:text-6xl">
-                    Explore {item.title}
-                  </span>
-                  <span className="mx-10 text-black text-3xl lg:text-6xl">
-                    Explore {item.title}
-                  </span>
-                </div>
-              </div>
-            </Link>
-	  ))}
-        </div>
-      </div>
+    <div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/rentals" element={<RentalDashboard />} />
+        <Route path="/rentals/create" element={<CreateRental />} />
+        <Route path="/rentals/:rentalId" element={<RentalDetails />} />
+        <Route path="/rentals/:rentalId/items" element={<RentalItems />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/get-profile" element={<Profile />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
+        </Route>
+        <Route path="/order-confirmation" element={<OrderConfirmation />} />
+      </Routes>
     </div>
   );
 };
 
-export default FullScreenNav;
+export default AppRoutes;

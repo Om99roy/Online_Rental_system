@@ -7,6 +7,23 @@ export const API = {
     LOGOUT: `${import.meta.env.VITE_API_BASE_URL}/auth/logout`,
     FORGOT_PASSWORD: `${import.meta.env.VITE_API_BASE_URL}/auth/forgot-password`,
     RESET_PASSWORD: `${import.meta.env.VITE_API_BASE_URL}/auth/reset-password`,
+    UPDATE_PROFILE: `${import.meta.env.VITE_API_BASE_URL}/auth/profile`,
+    UPLOAD_AVATAR: `${import.meta.env.VITE_API_BASE_URL}/auth/profile/avatar`,
+  },
+  INVOICES: {
+    GET: (rentalId: string) =>
+      `${import.meta.env.VITE_API_BASE_URL}/rentals/${rentalId}/invoice`,
+  },
+  PRODUCTS: {
+    LIST: `${import.meta.env.VITE_API_BASE_URL}/products`,
+  },
+  ADDRESSES: {
+    LIST: `${import.meta.env.VITE_API_BASE_URL}/addresses`,
+    CREATE: `${import.meta.env.VITE_API_BASE_URL}/addresses`,
+    DELETE: (id: string) =>
+      `${import.meta.env.VITE_API_BASE_URL}/addresses/${id}`,
+    SET_DEFAULT: (id: string) =>
+      `${import.meta.env.VITE_API_BASE_URL}/addresses/${id}/default`,
   },
   ADMIN: {
     USERS: `${import.meta.env.VITE_API_BASE_URL}/admin/users`,

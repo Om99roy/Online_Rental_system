@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { connectRabbitMQ } from "./lib/rabbitmq.ts";
 import { startEmailWorker } from "./workers/email.worker.ts";
 
